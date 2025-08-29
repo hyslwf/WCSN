@@ -32,7 +32,7 @@ def model_training(train_x, train_y, val_x, val_y, test_x, test_y, lr, epochs, o
     # 构建模型
     encoder_model = auto_encoder(outputs_dim)
     # cnn_model = cnn(subject_number)
-    cnn_model = TransformerClassifier(subject_number)
+    cnn_model = TransformerClassifier(subject_number)    # 偷懒，换了模型没改变量名
 
     encoder_model.build(input_shape=(None, train_x.shape[1], train_x.shape[2], train_x.shape[3]))
     temp = encoder_model.encoder_subject(val_x[0:2])
@@ -85,5 +85,6 @@ def model_training(train_x, train_y, val_x, val_y, test_x, test_y, lr, epochs, o
             y.append(1)
 
     return model_outputs(pre_test_y, y, pattern_number)
+
 
 
