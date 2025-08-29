@@ -24,7 +24,8 @@ Specifically, the proposed DCoAE was composed of two encoders, Ep and Es, as wel
 Drawing on the concept of feature disentanglement, two supervised constraints, namely cross-reconstruction loss and triplet loss, were employed to realize the extraction and separation of pathological features and state features. To optimize the model, we incorporated these two supervised constraints into the loss function of DCoAE and subsequently minimized it.
 
 Convolutional Neural Networks (CNNs), with their advantages of local perception, weight sharing, translation invariance, and automatic feature extraction, are widely applied in image-related tasks such as processing, recognition, and medical diagnosis. In this study, CNN was employed to process pathological image features extracted by Ep for the identification of MDD. A five-layer CNN architecture was designed, consisting of convolutional, pooling, batch normalization (BN), and fully connected (FC) layers, with ReLU as the activation function and softmax for the final classification. The cross-entropy loss function was used to optimize the model.
-﻿
+
+ 
 In contrast, the Transformer architecture is well suited for capturing long-range dependencies and global contextual relationships, making it advantageous in tasks involving sequential or temporal information. To leverage this capability, a Transformer-based classifier was constructed to model the pathology-related feature sequences for MDD identification. The model comprises two Transformer encoder blocks with multi-head self-attention and feedforward layers, followed by global average pooling, dropout, and a fully connected classification layer. The categorical cross-entropy loss function was applied during training.
 
 # Feature map selection
