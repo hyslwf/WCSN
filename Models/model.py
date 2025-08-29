@@ -121,3 +121,78 @@ class cnn(tf.keras.Model):
         outputs = self.d3(x)
 
         return outputs
+
+
+# Transformer块定义
+class TransformerBlock(tf.keras.layers.Layer):
+    def __init__(self, d_model, num_heads, dff, dropout_rate=0.1):
+        super(TransformerBlock, self).__init__()
+
+        self.mha = tf.keras.layers.MultiHeadAttention(
+            num_heads=num_heads, key_dim=d_model)
+
+        self.ffn = tf.keras.Sequential([
+            tf.keras.layers.Dense(dff, activation='relu'),
+            tf.keras.layers.Dense(d_model)
+        ])
+
+        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+        self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
+        self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
+
+    def call(self, inputs, training=False):
+        # 多头自注意力
+        attn_output = self.mha(inputs, inputs)
+        attn_output = self.dropout1(attn_output, training=training)
+        out1 = self.layernorm1(inputs + attn_output)
+
+        # 前馈网络
+        ffn_output = self.ffn(out1)
+        ffn_output = self.dropout2(ffn_output, training=training)
+        outputs = self.layernorm2(out1 + ffn_output)
+
+        return outputs
+
+
+class TransformerClassifier(tf.keras.Model):
+    def __init__(self, output_size=2, num_layers=2, d_model=64, num_heads=4, dff=256, dropout_rate=0.1):
+        super(TransformerClassifier, self).__init__()
+        self.d_model = d_model
+        self.num_layers = num_layers
+
+        # 投影层，把 40*3 → d_model
+        self.dense_proj = tf.keras.layers.Dense(d_model)
+
+        # Transformer编码层
+        self.enc_layers = [
+            TransformerBlock(d_model, num_heads, dff, dropout_rate)
+            for _ in range(num_layers)
+        ]
+
+        # 分类头
+        self.global_pool = tf.keras.layers.GlobalAveragePooling1D()
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+        self.classifier = tf.keras.layers.Dense(output_size, activation='softmax')
+
+    def call(self, inputs, training=False):
+        # 输入: (batch, 40, 50, 3)
+        # 转置维度 → (batch, 50, 40, 3)，方便按时间切分
+        x = tf.transpose(inputs, perm=[0, 2, 1, 3])
+
+        # 展平频域 + 通道 → (batch, 50, 40*3)
+        x = tf.reshape(x, (tf.shape(x)[0], tf.shape(x)[1], -1))
+
+        # 投影到 d_model → (batch, 50, d_model)
+        x = self.dense_proj(x)
+
+        # 通过 Transformer 编码层
+        for layer in self.enc_layers:
+            x = layer(x, training=training)
+
+        # 全局池化 + 分类
+        x = self.global_pool(x)
+        x = self.dropout(x, training=training)
+        outputs = self.classifier(x)
+        return outputs
